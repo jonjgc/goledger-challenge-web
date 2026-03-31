@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/providers/query-provider";
+import { Navbar } from "@/components/Navbar";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "GoLedger Challenge - IMDb",
-  description: "Desafio técnico GoLedger",
+  description: "Catálogo de Séries estilo IMDb",
 };
 
 export default function RootLayout({
@@ -16,10 +17,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
-      <body className={inter.className}>
+    <html lang="pt-BR" className="dark">
+      <body className={`${inter.className} bg-background text-foreground min-h-screen flex flex-col`}>
         <QueryProvider>
-          {children}
+          <Navbar />
+          <main className="flex-1 container mx-auto px-4 py-8">
+            {children}
+          </main>
         </QueryProvider>
       </body>
     </html>

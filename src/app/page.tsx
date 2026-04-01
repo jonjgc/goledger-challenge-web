@@ -1,40 +1,61 @@
 "use client";
 
+import { useState } from "react";
 import { useTvShows } from "@/hooks/useTvShows";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Plus } from "lucide-react";
+import { TvShowDialog } from "@/components/TvShowDialog";
+import { deleteTvShow, TvShow } from "@/services/tvShows";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function Home() {
   const { data: tvShows, isLoading, error } = useTvShows();
+  const queryClient = useQueryClient();
+  
+  // Controle do Modal
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [showToEdit, setShowToEdit] = useState<TvShow | null>(null);
+
+  // Mutação para deletar
+  const deleteMutation = useMutation({
+    mutationFn: deleteTvShow,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tvShows"] });
+    },
+  });
+
+  const handleAddClick = () => {
+    setShowToEdit(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleEditClick = (show: TvShow) => {
+    setShowToEdit(show);
+    setIsDialogOpen(true);
+  };
+
+  const handleDeleteClick = (key: string) => {
+    if (confirm("Tem certeza que deseja excluir esta série?")) {
+      deleteMutation.mutate(key);
+    }
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Séries em Destaque</h1>
-          <p className="text-muted-foreground">
-            Catálogo completo de TV Shows da GoLedger.
-          </p>
+          <p className="text-muted-foreground">Catálogo completo de TV Shows da GoLedger.</p>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button className="flex items-center gap-2" onClick={handleAddClick}>
           <Plus className="w-4 h-4" />
           Adicionar Série
         </Button>
       </div>
 
-      {isLoading && (
-        <div className="flex justify-center py-10">
-          <p className="text-muted-foreground animate-pulse">Carregando catálogo...</p>
-        </div>
-      )}
-
-      {error && (
-        <div className="p-4 bg-red-500/10 text-red-500 rounded-md border border-red-500/20">
-          Erro ao carregar as séries. Verifique sua conexão e credenciais.
-        </div>
-      )}
-
+      {isLoading && <p className="text-muted-foreground animate-pulse text-center py-10">Carregando catálogo...</p>}
+      
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {tvShows?.map((show) => (
           <Card key={show["@key"]} className="flex flex-col border-border/50 bg-card/50 backdrop-blur-sm hover:border-border transition-colors">
@@ -45,27 +66,25 @@ export default function Home() {
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1">
-              <p className="text-sm text-muted-foreground line-clamp-3">
-                {show.description}
-              </p>
+              <p className="text-sm text-muted-foreground line-clamp-3">{show.description}</p>
             </CardContent>
             <CardFooter className="flex justify-end gap-2 border-t pt-4">
-              <Button variant="secondary" size="icon" title="Editar série">
+              <Button variant="secondary" size="icon" onClick={() => handleEditClick(show)}>
                 <Edit className="h-4 w-4" />
               </Button>
-              <Button variant="destructive" size="icon" title="Excluir série">
+              <Button variant="destructive" size="icon" disabled={deleteMutation.isPending} onClick={() => handleDeleteClick(show["@key"])}>
                 <Trash2 className="h-4 w-4" />
               </Button>
             </CardFooter>
           </Card>
         ))}
-        
-        {tvShows?.length === 0 && !isLoading && (
-          <p className="text-muted-foreground col-span-full text-center py-10">
-            Nenhuma série cadastrada ainda.
-          </p>
-        )}
       </div>
+
+      <TvShowDialog 
+        open={isDialogOpen} 
+        onOpenChange={setIsDialogOpen} 
+        tvShowToEdit={showToEdit} 
+      />
     </div>
   );
 }

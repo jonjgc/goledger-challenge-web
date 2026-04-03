@@ -72,7 +72,7 @@ export function WatchlistDialog({ open, onOpenChange, watchlistToEdit }: Watchli
       return createWatchlist(payload);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["watchlist"] });
+      queryClient.invalidateQueries({ queryKey: ["watchlists"] });
       onOpenChange(false);
       toast.success(isEditing ? "Lista atualizada com sucesso!" : "Lista criada com sucesso!");
     },

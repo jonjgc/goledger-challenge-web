@@ -9,19 +9,26 @@ import { Edit, Trash2, Plus } from "lucide-react";
 import { SeasonDialog } from "@/components/SeasonDialog";
 import { deleteSeason, Season } from "@/services/seasons";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export default function SeasonsPage() {
   const { data: seasons, isLoading: isLoadingSeasons } = useSeasons();
   const { data: tvShows } = useTvShows();
-  
+
   const queryClient = useQueryClient();
-  
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [seasonToEdit, setSeasonToEdit] = useState<Season | null>(null);
 
   const deleteMutation = useMutation({
     mutationFn: deleteSeason,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["seasons"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["seasons"] });
+      toast.success("Temporada excluída com sucesso!");
+    },
+    onError: () => {
+      toast.error("Erro ao excluir a temporada.");
+    }
   });
 
   const handleAddClick = () => {
@@ -54,7 +61,7 @@ export default function SeasonsPage() {
       </div>
 
       {isLoadingSeasons && <p className="text-muted-foreground animate-pulse text-center py-10">Carregando temporadas...</p>}
-      
+
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {seasons?.map((season) => {
           const parentShow = tvShows?.find(show => show["@key"] === season.tvShow["@key"]);
@@ -86,10 +93,10 @@ export default function SeasonsPage() {
         })}
       </div>
 
-      <SeasonDialog 
-        open={isDialogOpen} 
-        onOpenChange={setIsDialogOpen} 
-        seasonToEdit={seasonToEdit} 
+      <SeasonDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        seasonToEdit={seasonToEdit}
       />
     </div>
   );

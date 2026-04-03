@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createSeason, updateSeason, Season } from "@/services/seasons";
 import { useTvShows } from "@/hooks/useTvShows";
+import { toast } from "sonner";
 
 const formSchema = z.object({
   number: z.any().transform(Number).refine(val => val > 0, "O número deve ser maior que 0"),
@@ -70,7 +71,11 @@ export function SeasonDialog({ open, onOpenChange, seasonToEdit }: SeasonDialogP
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["seasons"] });
       onOpenChange(false);
+      toast.success(isEditing ? "Temporada atualizada!" : "Temporada criada!");
     },
+    onError: () => {
+      toast.error("Ocorreu um erro ao salvar a temporada. Tente novamente.");
+    }
   });
 
   const onSubmit = (data: FormValues) => {

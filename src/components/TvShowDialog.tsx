@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createTvShow, updateTvShow, TvShow } from "@/services/tvShows";
+import { toast } from "sonner"; 
 
 const formSchema = z.object({
   title: z.string().min(1, "O título é obrigatório"),
@@ -63,7 +64,11 @@ export function TvShowDialog({ open, onOpenChange, tvShowToEdit }: TvShowDialogP
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tvShows"] });
       onOpenChange(false);
+      toast.success(isEditing ? "Série atualizada com sucesso!" : "Série criada com sucesso!");
     },
+    onError: () => {
+      toast.error("Ocorreu um erro ao salvar a série. Tente novamente.");
+    }
   });
 
   const onSubmit = (data: FormValues) => {

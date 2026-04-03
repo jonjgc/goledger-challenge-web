@@ -10,20 +10,27 @@ import { Edit, Trash2, Plus } from "lucide-react";
 import { EpisodeDialog } from "@/components/EpisodeDialog";
 import { deleteEpisode, Episode } from "@/services/episodes";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export default function EpisodesPage() {
   const { data: episodes, isLoading: isLoadingEpisodes } = useEpisodes();
   const { data: seasons } = useSeasons();
   const { data: tvShows } = useTvShows();
-  
+
   const queryClient = useQueryClient();
-  
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [episodeToEdit, setEpisodeToEdit] = useState<Episode | null>(null);
 
   const deleteMutation = useMutation({
     mutationFn: deleteEpisode,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["episodes"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["episodes"] });
+      toast.success("Episódio excluído com sucesso!");
+    },
+    onError: () => {
+      toast.error("Erro ao excluir o episódio.");
+    }
   });
 
   const handleAddClick = () => {
@@ -56,31 +63,30 @@ export default function EpisodesPage() {
       </div>
 
       {isLoadingEpisodes && <p className="text-muted-foreground animate-pulse text-center py-10">Carregando episódios...</p>}
-      
+
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {episodes?.map((episode) => {
-          // Lógica para achar o nome da série a partir da chave da temporada
           const parentSeason = seasons?.find(s => s["@key"] === episode.season["@key"]);
           const parentShow = tvShows?.find(ts => ts["@key"] === parentSeason?.tvShow["@key"]);
-          
+
           const showName = parentShow ? parentShow.title : "Série desconhecida";
           const seasonNumber = parentSeason ? parentSeason.number : "?";
 
           let formattedDate = "Data inválida";
           try {
-             formattedDate = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short'}).format(new Date(episode.releaseDate));
-          } catch(e) {}
+            formattedDate = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(episode.releaseDate));
+          } catch (e) { }
 
           return (
             <Card key={episode["@key"]} className="flex flex-col border-border/50 bg-card/50 backdrop-blur-sm hover:border-border transition-colors">
               <CardHeader>
                 <div className="flex justify-between items-start">
-                    <CardTitle className="line-clamp-1">{episode.episodeNumber}. {episode.title}</CardTitle>
-                    {episode.rating !== undefined && (
-                        <span className="text-xs font-bold bg-yellow-500/20 text-yellow-600 dark:text-yellow-500 px-2 py-1 rounded">
-                            ★ {episode.rating}
-                        </span>
-                    )}
+                  <CardTitle className="line-clamp-1">{episode.episodeNumber}. {episode.title}</CardTitle>
+                  {episode.rating !== undefined && (
+                    <span className="text-xs font-bold bg-yellow-500/20 text-yellow-600 dark:text-yellow-500 px-2 py-1 rounded">
+                      ★ {episode.rating}
+                    </span>
+                  )}
                 </div>
                 <CardDescription className="text-primary line-clamp-1" title={`${showName} - T${seasonNumber}`}>
                   {showName} - Temporada {seasonNumber}
@@ -105,10 +111,10 @@ export default function EpisodesPage() {
         })}
       </div>
 
-      <EpisodeDialog 
-        open={isDialogOpen} 
-        onOpenChange={setIsDialogOpen} 
-        episodeToEdit={episodeToEdit} 
+      <EpisodeDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        episodeToEdit={episodeToEdit}
       />
     </div>
   );

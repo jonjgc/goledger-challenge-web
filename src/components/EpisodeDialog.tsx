@@ -14,6 +14,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createEpisode, updateEpisode, Episode } from "@/services/episodes";
 import { useTvShows } from "@/hooks/useTvShows";
 import { useSeasons } from "@/hooks/useSeasons";
+import { toast } from "sonner";
 
 const formSchema = z.object({
   tvShowKey: z.string().min(1, "Selecione uma série"),
@@ -62,11 +63,11 @@ export function EpisodeDialog({ open, onOpenChange, episodeToEdit }: EpisodeDial
 
       let formattedDate = "";
       if (episodeToEdit?.releaseDate) {
-         try{
-             formattedDate = new Date(episodeToEdit.releaseDate).toISOString().slice(0, 16);
-         }catch(e){
-             formattedDate = "";
-         }
+        try {
+          formattedDate = new Date(episodeToEdit.releaseDate).toISOString().slice(0, 16);
+        } catch (e) {
+          formattedDate = "";
+        }
       }
 
       form.reset({
@@ -114,7 +115,11 @@ export function EpisodeDialog({ open, onOpenChange, episodeToEdit }: EpisodeDial
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["episodes"] });
       onOpenChange(false);
+      toast.success(isEditing ? "Episódio atualizado com sucesso!" : "Episódio criado com sucesso!");
     },
+    onError: () => {
+      toast.error("Ocorreu um erro ao salvar o episódio. Tente novamente.");
+    }
   });
 
   const onSubmit = (data: FormValues) => {
@@ -129,7 +134,7 @@ export function EpisodeDialog({ open, onOpenChange, episodeToEdit }: EpisodeDial
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -138,8 +143,8 @@ export function EpisodeDialog({ open, onOpenChange, episodeToEdit }: EpisodeDial
                   <FormItem>
                     <FormLabel>Série (TV Show)</FormLabel>
                     <Select disabled={isEditing} onValueChange={(val) => {
-                         field.onChange(val);
-                         form.setValue("seasonKey", "");
+                      field.onChange(val);
+                      form.setValue("seasonKey", "");
                     }} value={field.value || undefined}>
                       <FormControl>
                         <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
@@ -180,28 +185,28 @@ export function EpisodeDialog({ open, onOpenChange, episodeToEdit }: EpisodeDial
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-                <FormField
+              <FormField
                 control={form.control}
                 name="episodeNumber"
                 render={({ field }) => (
-                    <FormItem>
+                  <FormItem>
                     <FormLabel>Número</FormLabel>
                     <FormControl><Input type="number" disabled={isEditing} {...field} /></FormControl>
                     <FormMessage />
-                    </FormItem>
+                  </FormItem>
                 )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="rating"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Avaliação (0-10)</FormLabel>
-                      <FormControl><Input type="number" step="0.1" max="10" min="0" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              />
+              <FormField
+                control={form.control}
+                name="rating"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Avaliação (0-10)</FormLabel>
+                    <FormControl><Input type="number" step="0.1" max="10" min="0" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             <FormField
@@ -228,7 +233,7 @@ export function EpisodeDialog({ open, onOpenChange, episodeToEdit }: EpisodeDial
               )}
             />
 
-             <FormField
+            <FormField
               control={form.control}
               name="description"
               render={({ field }) => (

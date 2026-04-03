@@ -8,21 +8,23 @@ import { Edit, Trash2, Plus } from "lucide-react";
 import { TvShowDialog } from "@/components/TvShowDialog";
 import { deleteTvShow, TvShow } from "@/services/tvShows";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export default function Home() {
   const { data: tvShows, isLoading, error } = useTvShows();
   const queryClient = useQueryClient();
-  
-  // Controle do Modal
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [showToEdit, setShowToEdit] = useState<TvShow | null>(null);
 
-  // Mutação para deletar
   const deleteMutation = useMutation({
     mutationFn: deleteTvShow,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tvShows"] });
+      toast.success("Série excluída com sucesso!");
     },
+    onError: () => {
+      toast.error("Erro ao excluir a série.");
+    }
   });
 
   const handleAddClick = () => {

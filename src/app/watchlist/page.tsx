@@ -9,6 +9,7 @@ import { Edit, Trash2, Plus, Film } from "lucide-react";
 import { WatchlistDialog } from "@/components/WatchlistDialog";
 import { deleteWatchlist, Watchlist } from "@/services/watchlist";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export default function WatchlistPage() {
   const { data: watchlists, isLoading } = useWatchlists();
@@ -18,10 +19,16 @@ export default function WatchlistPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [listToEdit, setListToEdit] = useState<Watchlist | null>(null);
 
-  const deleteMutation = useMutation({
-    mutationFn: deleteWatchlist,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["watchlists"] }),
-  });
+   const deleteMutation = useMutation({
+      mutationFn: deleteWatchlist,
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["tvShows"] });
+        toast.success("Série excluída da lista de desejos!");
+      },
+      onError: () => {
+        toast.error("Erro ao excluir a série.");
+      }
+    });
 
   const handleAddClick = () => {
     setListToEdit(null);

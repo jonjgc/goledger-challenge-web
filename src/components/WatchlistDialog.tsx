@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createWatchlist, updateWatchlist, Watchlist } from "@/services/watchlist";
 import { useTvShows } from "@/hooks/useTvShows";
+import { toast } from "sonner";
 
 const formSchema = z.object({
   title: z.string().min(1, "O título é obrigatório"),
@@ -71,9 +72,13 @@ export function WatchlistDialog({ open, onOpenChange, watchlistToEdit }: Watchli
       return createWatchlist(payload);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["watchlists"] });
+      queryClient.invalidateQueries({ queryKey: ["watchlist"] });
       onOpenChange(false);
+      toast.success(isEditing ? "Lista atualizada com sucesso!" : "Lista criada com sucesso!");
     },
+    onError: () => {
+      toast.error("Ocorreu um erro ao salvar a lista. Tente novamente.");
+    }
   });
 
   const onSubmit = (data: FormValues) => {

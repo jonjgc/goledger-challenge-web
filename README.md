@@ -1,51 +1,66 @@
-# GoLedger Challenge
+# GoLedger TV Shows
 
-In this challenge you will create a web interface to a blockchain application. In this application you must implement a imdb-like interface, to catalogue TV Shows, with series, seasons, episodes and watchlist registration.
+Uma aplicação web moderna, responsiva e robusta para gerenciamento de um catálogo de Séries, Temporadas, Episódios e Watchlists.
 
-# Requirements
+**[Acesse o projeto em produção aqui](https://goledger-challenge-web-five.vercel.app/tvshows)**
 
-- Your application should be able to add/remove/edit and show all tv shows, seasons, episodes and watchlists;
-- Use **React** or **Next.js** (all UI libraries are allowed);
+## Funcionalidades Implementadas
 
-## Instructions
+- **CRUD Completo:** Criação, leitura, atualização e exclusão para todas as entidades (TV Shows, Seasons, Episodes e Watchlists).
+- **Relacionamentos** - Selects em cascata (Ex: ao criar um episódio, você seleciona a série e o sistema filtra as temporadas disponíveis apenas para aquela série).
+  - Seleção múltipla via Checkboxes dinâmicos para a montagem de Watchlists.
+- **Feedbacks Visuais usando Toasts:** Alertas em tempo real de sucesso ou erro nas requisições, melhorando a fluidez da navegação (usando Sonner).
+- **Tratamento de Datas e Timezones:** Conversão correta de horários de UTC para o fuso local do usuário na edição de episódios, evitando o bug de "timezone".
+- **Sincronização de Cache:** Utilização avançada do React Query para invalidar chaves de cache e atualizar a interface automaticamente após mutações, sem necessidade de refresh manual.
 
-- Fork the repository [https://github.com/goledgerdev/goledger-challenge-web](https://github.com/goledgerdev/goledger-challenge-web)
-    - Fork it, do **NOT** clone it, since you will need to send us your forked repository
-    - If you **cannot** fork it, create a private repository and give access to `andremacedopv` and `lucas-campelo`.
-- Create an web application using React. You will implement the basic operations provided by the API, which are `Create`, `Update`, `Delete` and `Search`.
-- Improve your application with a beautiful UI.
+## Tecnologias Utilizadas
 
-## Server
+- **[Next.js 14]**(App Router)
+- **[React]**
+- **[TypeScript]**
+- **[Tailwind CSS]** (Estilização)
+- **[Shadcn UI]** (Componentes acessíveis e customizáveis)
+- **[React Query]** (Gerenciamento de estados assíncronos e cache)
+- **[React Hook Form]** + **[Zod]** (Construção e validação de formulários)
+- **[Axios]** (Requisições HTTP)
 
-The data are obtained using a rest server at this address: `http://ec2-50-19-36-138.compute-1.amazonaws.com`
+---
 
-Also, a Swagger with the endpoints specifications for the operations is provided at this address: `http://ec2-50-19-36-138.compute-1.amazonaws.com/api-docs/index.html`.
+## Como rodar o projeto localmente
 
-Note: The API is protected with Basic Auth. The credentials were sent to you by email.
+Siga os passos abaixo para testar a aplicação na sua máquina:
 
-Tip: execute each operation in the Swagger for information on payload format and endpoint addresses. See examples below.
-
-### Get Schema
-Execute a `getSchema` operation to get information on which asset types are available. Don't forget to authenticate with the credentials provided.
-
-```bash
-curl -X POST "http://ec2-50-19-36-138.compute-1.amazonaws.com/api/query/getSchema" -H "accept: */*" -H "Content-Type: application/json"
-```
-
-Execute a getSchema with a payload to get more details on a particula asset.
+1. **Clone o repositório:**
 
 ```bash
-curl -X POST "http://ec2-50-19-36-138.compute-1.amazonaws.com/api/query/getSchema" -H "accept: */*" -H "Content-Type: application/json" -d "{\"assetType\":\"tvShows\"}"
+git clone https://github.com/jonjgc/goledger-challenge-web.git
 ```
-Tip: the same can be done with transactions, using the `getTx` endpoint.
 
-### Search
-Perform a search query on a particular asset type.
+2. **Acesse a pasta do projeto:**
+
 ```bash
-curl -X POST "http://ec2-50-19-36-138.compute-1.amazonaws.com/api/query/search" -H "accept: */*" -H "Content-Type: application/json" -d "{\"query\":{\"selector\":{\"@assetType\":\"seasons\"}}}"
+cd goledger-challenge-web
 ```
-Tip: to read a specific asset, you can use the `readAsset` endpoint.
 
-## Complete the challenge
+3. **Instale as dependências**
 
-To complete the challenge, you must send us the link to your forked repository with the code of your application. Please, provide instructions to execute the code.
+```bash
+npm install
+```
+
+4. **Configuração da variáveis de ambiente**
+Crie um arquivo chamado .env.local na raiz do projeto e adicione a sua chave de autenticação Basic (em base64):
+
+```bash
+NEXT_PUBLIC_BASIC_AUTH=Z29sZWRnZXI6NU54VkNBakM=
+```
+
+5. **Inicie o servidor de desenvolvimento:**
+
+```bash
+npm run dev
+```
+
+6. **Abra http://localhost:3000 no seu navegador para ver o resultado.**
+
+

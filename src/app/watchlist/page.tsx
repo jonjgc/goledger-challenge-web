@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useWatchlists } from "@/hooks/useWatchlists";
 import { useTvShows } from "@/hooks/useTvShows";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,24 +12,25 @@ import { deleteWatchlist, Watchlist } from "@/services/watchlist";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-export default function WatchlistPage() {
+function WatchlistContent() {
   const { data: watchlists, isLoading } = useWatchlists();
   const { data: tvShows } = useTvShows();
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
   
+  const searchQuery = searchParams.get("q")?.toLowerCase() || "";
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [listToEdit, setListToEdit] = useState<Watchlist | null>(null);
 
-   const deleteMutation = useMutation({
-      mutationFn: deleteWatchlist,
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["tvShows"] });
-        toast.success("Série excluída da lista de desejos!");
-      },
-      onError: () => {
-        toast.error("Erro ao excluir a série.");
-      }
-    });
+  const deleteMutation = useMutation({
+    mutationFn: deleteWatchlist,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["watchlists"] });
+      toast.success("Lista excluída com sucesso!");
+    },
+    onError: () => toast.error("Erro ao excluir a lista.")
+  });
 
   const handleAddClick = () => {
     setListToEdit(null);
@@ -46,6 +48,12 @@ export default function WatchlistPage() {
     }
   };
 
+  // Filtra as watchlists pelo título ou descrição
+  const filteredWatchlists = watchlists?.filter(list => 
+    list.title.toLowerCase().includes(searchQuery) || 
+    (list.description && list.description.toLowerCase().includes(searchQuery))
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -61,8 +69,12 @@ export default function WatchlistPage() {
 
       {isLoading && <p className="text-muted-foreground animate-pulse text-center py-10">Carregando listas...</p>}
       
+      {!isLoading && filteredWatchlists?.length === 0 && (
+         <p className="text-center text-muted-foreground py-10">Nenhuma lista encontrada para "{searchQuery}".</p>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {watchlists?.map((list) => {
+        {filteredWatchlists?.map((list) => {
           return (
             <Card key={list["@key"]} className="flex flex-col border-border/50 bg-card/50 backdrop-blur-sm hover:border-border transition-colors">
               <CardHeader>
@@ -105,11 +117,15 @@ export default function WatchlistPage() {
         })}
       </div>
 
-      <WatchlistDialog 
-        open={isDialogOpen} 
-        onOpenChange={setIsDialogOpen} 
-        watchlistToEdit={listToEdit} 
-      />
+      <WatchlistDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} watchlistToEdit={listToEdit} />
     </div>
+  );
+}
+
+export default function WatchlistPage() {
+  return (
+    <Suspense fallback={<p className="text-center py-10">Carregando...</p>}>
+      <WatchlistContent />
+    </Suspense>
   );
 }

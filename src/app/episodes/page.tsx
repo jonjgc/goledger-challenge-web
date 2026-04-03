@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useEpisodes } from "@/hooks/useEpisodes";
 import { useSeasons } from "@/hooks/useSeasons";
 import { useTvShows } from "@/hooks/useTvShows";
@@ -12,12 +13,14 @@ import { deleteEpisode, Episode } from "@/services/episodes";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-export default function EpisodesPage() {
+function EpisodesContent() {
   const { data: episodes, isLoading: isLoadingEpisodes } = useEpisodes();
   const { data: seasons } = useSeasons();
   const { data: tvShows } = useTvShows();
-
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
+  
+  const searchQuery = searchParams.get("q")?.toLowerCase() || "";
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [episodeToEdit, setEpisodeToEdit] = useState<Episode | null>(null);
@@ -28,9 +31,7 @@ export default function EpisodesPage() {
       queryClient.invalidateQueries({ queryKey: ["episodes"] });
       toast.success("Episódio excluído com sucesso!");
     },
-    onError: () => {
-      toast.error("Erro ao excluir o episódio.");
-    }
+    onError: () => toast.error("Erro ao excluir o episódio.")
   });
 
   const handleAddClick = () => {
@@ -49,6 +50,16 @@ export default function EpisodesPage() {
     }
   };
 
+  const filteredEpisodes = episodes?.filter(episode => {
+    const parentSeason = seasons?.find(s => s["@key"] === episode.season["@key"]);
+    const parentShow = tvShows?.find(ts => ts["@key"] === parentSeason?.tvShow["@key"]);
+    const showName = parentShow ? parentShow.title.toLowerCase() : "";
+
+    return episode.title.toLowerCase().includes(searchQuery) ||
+           (episode.description && episode.description.toLowerCase().includes(searchQuery)) ||
+           showName.includes(searchQuery);
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -63,12 +74,15 @@ export default function EpisodesPage() {
       </div>
 
       {isLoadingEpisodes && <p className="text-muted-foreground animate-pulse text-center py-10">Carregando episódios...</p>}
+      
+      {!isLoadingEpisodes && filteredEpisodes?.length === 0 && (
+         <p className="text-center text-muted-foreground py-10">Nenhum episódio encontrado para "{searchQuery}".</p>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {episodes?.map((episode) => {
+        {filteredEpisodes?.map((episode) => {
           const parentSeason = seasons?.find(s => s["@key"] === episode.season["@key"]);
           const parentShow = tvShows?.find(ts => ts["@key"] === parentSeason?.tvShow["@key"]);
-
           const showName = parentShow ? parentShow.title : "Série desconhecida";
           const seasonNumber = parentSeason ? parentSeason.number : "?";
 
@@ -111,11 +125,15 @@ export default function EpisodesPage() {
         })}
       </div>
 
-      <EpisodeDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        episodeToEdit={episodeToEdit}
-      />
+      <EpisodeDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} episodeToEdit={episodeToEdit} />
     </div>
+  );
+}
+
+export default function EpisodesPage() {
+  return (
+    <Suspense fallback={<p className="text-center py-10">Carregando...</p>}>
+      <EpisodesContent />
+    </Suspense>
   );
 }

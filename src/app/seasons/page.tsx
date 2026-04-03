@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useSeasons } from "@/hooks/useSeasons";
 import { useTvShows } from "@/hooks/useTvShows";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,11 +12,13 @@ import { deleteSeason, Season } from "@/services/seasons";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-export default function SeasonsPage() {
+function SeasonsContent() {
   const { data: seasons, isLoading: isLoadingSeasons } = useSeasons();
   const { data: tvShows } = useTvShows();
-
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
+  
+  const searchQuery = searchParams.get("q")?.toLowerCase() || "";
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [seasonToEdit, setSeasonToEdit] = useState<Season | null>(null);
@@ -26,9 +29,7 @@ export default function SeasonsPage() {
       queryClient.invalidateQueries({ queryKey: ["seasons"] });
       toast.success("Temporada excluída com sucesso!");
     },
-    onError: () => {
-      toast.error("Erro ao excluir a temporada.");
-    }
+    onError: () => toast.error("Erro ao excluir a temporada.")
   });
 
   const handleAddClick = () => {
@@ -46,6 +47,12 @@ export default function SeasonsPage() {
       deleteMutation.mutate(key);
     }
   };
+  
+  const filteredSeasons = seasons?.filter(season => {
+    const parentShow = tvShows?.find(show => show["@key"] === season.tvShow["@key"]);
+    const showName = parentShow ? parentShow.title.toLowerCase() : "";
+    return season.number.toString().includes(searchQuery) || showName.includes(searchQuery);
+  });
 
   return (
     <div className="space-y-6">
@@ -61,9 +68,13 @@ export default function SeasonsPage() {
       </div>
 
       {isLoadingSeasons && <p className="text-muted-foreground animate-pulse text-center py-10">Carregando temporadas...</p>}
+      
+      {!isLoadingSeasons && filteredSeasons?.length === 0 && (
+         <p className="text-center text-muted-foreground py-10">Nenhuma temporada encontrada para "{searchQuery}".</p>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {seasons?.map((season) => {
+        {filteredSeasons?.map((season) => {
           const parentShow = tvShows?.find(show => show["@key"] === season.tvShow["@key"]);
           const showName = parentShow ? parentShow.title : "Série não encontrada";
 
@@ -93,11 +104,15 @@ export default function SeasonsPage() {
         })}
       </div>
 
-      <SeasonDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        seasonToEdit={seasonToEdit}
-      />
+      <SeasonDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} seasonToEdit={seasonToEdit} />
     </div>
+  );
+}
+
+export default function SeasonsPage() {
+  return (
+    <Suspense fallback={<p className="text-center py-10">Carregando...</p>}>
+      <SeasonsContent />
+    </Suspense>
   );
 }

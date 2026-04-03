@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTvShows } from "@/hooks/useTvShows";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,11 +11,13 @@ import { deleteTvShow, TvShow } from "@/services/tvShows";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-export default function Home() {
-  const { data: tvShows, isLoading, error } = useTvShows();
+function TvShowsContent() {
+  const { data: tvShows, isLoading } = useTvShows();
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get("q")?.toLowerCase() || "";
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [showToEdit, setShowToEdit] = useState<TvShow | null>(null);
+  const [tvShowToEdit, setTvShowToEdit] = useState<TvShow | null>(null);
 
   const deleteMutation = useMutation({
     mutationFn: deleteTvShow,
@@ -22,18 +25,16 @@ export default function Home() {
       queryClient.invalidateQueries({ queryKey: ["tvShows"] });
       toast.success("Série excluída com sucesso!");
     },
-    onError: () => {
-      toast.error("Erro ao excluir a série.");
-    }
+    onError: () => toast.error("Erro ao excluir a série. Ela pode ter temporadas vinculadas.")
   });
 
   const handleAddClick = () => {
-    setShowToEdit(null);
+    setTvShowToEdit(null);
     setIsDialogOpen(true);
   };
 
-  const handleEditClick = (show: TvShow) => {
-    setShowToEdit(show);
+  const handleEditClick = (tvShow: TvShow) => {
+    setTvShowToEdit(tvShow);
     setIsDialogOpen(true);
   };
 
@@ -42,6 +43,11 @@ export default function Home() {
       deleteMutation.mutate(key);
     }
   };
+
+  const filteredShows = tvShows?.filter(show => 
+    show.title.toLowerCase().includes(searchQuery) || 
+    (show.description && show.description.toLowerCase().includes(searchQuery))
+  );
 
   return (
     <div className="space-y-6">
@@ -56,25 +62,31 @@ export default function Home() {
         </Button>
       </div>
 
-      {isLoading && <p className="text-muted-foreground animate-pulse text-center py-10">Carregando catálogo...</p>}
+      {isLoading && <p className="text-muted-foreground animate-pulse text-center py-10">Carregando séries...</p>}
       
+      {!isLoading && filteredShows?.length === 0 && (
+         <p className="text-center text-muted-foreground py-10">Nenhuma série encontrada para "{searchQuery}".</p>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {tvShows?.map((show) => (
-          <Card key={show["@key"]} className="flex flex-col border-border/50 bg-card/50 backdrop-blur-sm hover:border-border transition-colors">
+        {filteredShows?.map((tvShow) => (
+          <Card key={tvShow["@key"]} className="flex flex-col border-border/50 bg-card/50 backdrop-blur-sm hover:border-border transition-colors">
             <CardHeader>
-              <CardTitle className="line-clamp-1">{show.title}</CardTitle>
-              <CardDescription className="text-yellow-600 dark:text-yellow-500">
-                Idade Recomendada: {show.recommendedAge}+
+              <CardTitle className="line-clamp-1" title={tvShow.title}>{tvShow.title}</CardTitle>
+              <CardDescription className="text-yellow-600 dark:text-yellow-500 font-medium">
+                Idade Recomendada: {tvShow.recommendedAge}+
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1">
-              <p className="text-sm text-muted-foreground line-clamp-3">{show.description}</p>
+              <p className="text-sm text-muted-foreground line-clamp-3" title={tvShow.description}>
+                {tvShow.description}
+              </p>
             </CardContent>
             <CardFooter className="flex justify-end gap-2 border-t pt-4">
-              <Button variant="secondary" size="icon" onClick={() => handleEditClick(show)}>
+              <Button variant="secondary" size="icon" onClick={() => handleEditClick(tvShow)}>
                 <Edit className="h-4 w-4" />
               </Button>
-              <Button variant="destructive" size="icon" disabled={deleteMutation.isPending} onClick={() => handleDeleteClick(show["@key"])}>
+              <Button variant="destructive" size="icon" disabled={deleteMutation.isPending} onClick={() => handleDeleteClick(tvShow["@key"])}>
                 <Trash2 className="h-4 w-4" />
               </Button>
             </CardFooter>
@@ -85,8 +97,16 @@ export default function Home() {
       <TvShowDialog 
         open={isDialogOpen} 
         onOpenChange={setIsDialogOpen} 
-        tvShowToEdit={showToEdit} 
+        tvShowToEdit={tvShowToEdit} 
       />
     </div>
+  );
+}
+
+export default function TvShowsPage() {
+  return (
+    <Suspense fallback={<p className="text-center py-10">Carregando...</p>}>
+      <TvShowsContent />
+    </Suspense>
   );
 }

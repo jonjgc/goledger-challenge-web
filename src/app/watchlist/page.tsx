@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useWatchlists } from "@/hooks/useWatchlists";
 import { useTvShows } from "@/hooks/useTvShows";
@@ -11,17 +11,23 @@ import { WatchlistDialog } from "@/components/WatchlistDialog";
 import { deleteWatchlist, Watchlist } from "@/services/watchlist";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { PaginationControls } from "@/components/PaginationControls";
+
+const ITEMS_PER_PAGE = 20;
 
 function WatchlistContent() {
   const { data: watchlists, isLoading } = useWatchlists();
   const { data: tvShows } = useTvShows();
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
-
   const searchQuery = searchParams.get("q")?.toLowerCase() || "";
-
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [listToEdit, setListToEdit] = useState<Watchlist | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   const deleteMutation = useMutation({
     mutationFn: deleteWatchlist,
@@ -57,6 +63,12 @@ function WatchlistContent() {
     return dataB - dataA;
   });
 
+  const totalPages = Math.ceil((filteredWatchlists?.length || 0) / ITEMS_PER_PAGE);
+  const paginatedWatchlists = filteredWatchlists?.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -77,7 +89,7 @@ function WatchlistContent() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredWatchlists?.map((list) => {
+        {paginatedWatchlists?.map((list) => {
           return (
             <Card key={list["@key"]} className="flex flex-col border-border/50 bg-card/50 backdrop-blur-sm hover:border-border transition-colors">
               <CardHeader>
@@ -119,6 +131,12 @@ function WatchlistContent() {
           );
         })}
       </div>
+
+      <PaginationControls 
+        currentPage={currentPage} 
+        totalPages={totalPages} 
+        onPageChange={setCurrentPage} 
+      />
 
       <WatchlistDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} watchlistToEdit={listToEdit} />
     </div>

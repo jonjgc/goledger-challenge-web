@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTvShows } from "@/hooks/useTvShows";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,9 @@ import { TvShowDialog } from "@/components/TvShowDialog";
 import { deleteTvShow, TvShow } from "@/services/tvShows";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { PaginationControls } from "@/components/PaginationControls";
+
+const ITEMS_PER_PAGE = 20;
 
 function TvShowsContent() {
   const { data: tvShows, isLoading } = useTvShows();
@@ -18,6 +21,11 @@ function TvShowsContent() {
   const searchQuery = searchParams.get("q")?.toLowerCase() || "";
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [tvShowToEdit, setTvShowToEdit] = useState<TvShow | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   const deleteMutation = useMutation({
     mutationFn: deleteTvShow,
@@ -53,6 +61,12 @@ function TvShowsContent() {
     return dataB - dataA;
   });
 
+  const totalPages = Math.ceil((filteredShows?.length || 0) / ITEMS_PER_PAGE);
+  const paginatedShows = filteredShows?.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -73,7 +87,7 @@ function TvShowsContent() {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {filteredShows?.map((tvShow) => (
+        {paginatedShows?.map((tvShow) => (
           <Card key={tvShow["@key"]} className="flex flex-col border-border/50 bg-card/50 backdrop-blur-sm hover:border-border transition-colors">
             <CardHeader>
               <CardTitle className="line-clamp-1" title={tvShow.title}>{tvShow.title}</CardTitle>
@@ -97,6 +111,12 @@ function TvShowsContent() {
           </Card>
         ))}
       </div>
+
+      <PaginationControls 
+        currentPage={currentPage} 
+        totalPages={totalPages} 
+        onPageChange={setCurrentPage} 
+      />
 
       <TvShowDialog 
         open={isDialogOpen} 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useEpisodes } from "@/hooks/useEpisodes";
 import { useSeasons } from "@/hooks/useSeasons";
@@ -12,6 +12,9 @@ import { EpisodeDialog } from "@/components/EpisodeDialog";
 import { deleteEpisode, Episode } from "@/services/episodes";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { PaginationControls } from "@/components/PaginationControls";
+
+const ITEMS_PER_PAGE = 20;
 
 function EpisodesContent() {
   const { data: episodes, isLoading: isLoadingEpisodes } = useEpisodes();
@@ -24,6 +27,11 @@ function EpisodesContent() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [episodeToEdit, setEpisodeToEdit] = useState<Episode | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   const deleteMutation = useMutation({
     mutationFn: deleteEpisode,
@@ -64,6 +72,12 @@ function EpisodesContent() {
     return dataB - dataA;
   });
 
+  const totalPages = Math.ceil((filteredEpisodes?.length || 0) / ITEMS_PER_PAGE);
+  const paginatedEpisodes = filteredEpisodes?.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -84,7 +98,7 @@ function EpisodesContent() {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {filteredEpisodes?.map((episode) => {
+        {paginatedEpisodes?.map((episode) => {
           const parentSeason = seasons?.find(s => s["@key"] === episode.season["@key"]);
           const parentShow = tvShows?.find(ts => ts["@key"] === parentSeason?.tvShow["@key"]);
           const showName = parentShow ? parentShow.title : "Série desconhecida";
@@ -128,6 +142,12 @@ function EpisodesContent() {
           );
         })}
       </div>
+
+      <PaginationControls 
+        currentPage={currentPage} 
+        totalPages={totalPages} 
+        onPageChange={setCurrentPage} 
+      />
 
       <EpisodeDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} episodeToEdit={episodeToEdit} />
     </div>

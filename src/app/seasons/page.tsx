@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSeasons } from "@/hooks/useSeasons";
 import { useTvShows } from "@/hooks/useTvShows";
@@ -11,17 +11,23 @@ import { SeasonDialog } from "@/components/SeasonDialog";
 import { deleteSeason, Season } from "@/services/seasons";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { PaginationControls } from "@/components/PaginationControls";
+
+const ITEMS_PER_PAGE = 20;
 
 function SeasonsContent() {
   const { data: seasons, isLoading: isLoadingSeasons } = useSeasons();
   const { data: tvShows } = useTvShows();
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
-
   const searchQuery = searchParams.get("q")?.toLowerCase() || "";
-
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [seasonToEdit, setSeasonToEdit] = useState<Season | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   const deleteMutation = useMutation({
     mutationFn: deleteSeason,
@@ -58,6 +64,12 @@ function SeasonsContent() {
     return dataB - dataA;
   });
 
+  const totalPages = Math.ceil((filteredSeasons?.length || 0) / ITEMS_PER_PAGE);
+  const paginatedSeasons = filteredSeasons?.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -78,7 +90,7 @@ function SeasonsContent() {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {filteredSeasons?.map((season) => {
+        {paginatedSeasons?.map((season) => {
           const parentShow = tvShows?.find(show => show["@key"] === season.tvShow["@key"]);
           const showName = parentShow ? parentShow.title : "Série não encontrada";
 
@@ -107,6 +119,12 @@ function SeasonsContent() {
           );
         })}
       </div>
+
+      <PaginationControls 
+        currentPage={currentPage} 
+        totalPages={totalPages} 
+        onPageChange={setCurrentPage} 
+      />
 
       <SeasonDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} seasonToEdit={seasonToEdit} />
     </div>

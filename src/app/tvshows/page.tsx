@@ -47,7 +47,11 @@ function TvShowsContent() {
   const filteredShows = tvShows?.filter(show => 
     show.title.toLowerCase().includes(searchQuery) || 
     (show.description && show.description.toLowerCase().includes(searchQuery))
-  );
+  ).sort((a, b) => {
+    const dataA = (a as any)["@lastUpdated"] ? new Date((a as any)["@lastUpdated"]).getTime() : 0;
+    const dataB = (b as any)["@lastUpdated"] ? new Date((b as any)["@lastUpdated"]).getTime() : 0;
+    return dataB - dataA;
+  });
 
   return (
     <div className="space-y-6">

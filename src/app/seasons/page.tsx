@@ -17,7 +17,7 @@ function SeasonsContent() {
   const { data: tvShows } = useTvShows();
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
-  
+
   const searchQuery = searchParams.get("q")?.toLowerCase() || "";
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -47,11 +47,15 @@ function SeasonsContent() {
       deleteMutation.mutate(key);
     }
   };
-  
+
   const filteredSeasons = seasons?.filter(season => {
     const parentShow = tvShows?.find(show => show["@key"] === season.tvShow["@key"]);
     const showName = parentShow ? parentShow.title.toLowerCase() : "";
     return season.number.toString().includes(searchQuery) || showName.includes(searchQuery);
+  }).sort((a, b) => {
+    const dataA = (a as any)["@lastUpdated"] ? new Date((a as any)["@lastUpdated"]).getTime() : 0;
+    const dataB = (b as any)["@lastUpdated"] ? new Date((b as any)["@lastUpdated"]).getTime() : 0;
+    return dataB - dataA;
   });
 
   return (
@@ -68,9 +72,9 @@ function SeasonsContent() {
       </div>
 
       {isLoadingSeasons && <p className="text-muted-foreground animate-pulse text-center py-10">Carregando temporadas...</p>}
-      
+
       {!isLoadingSeasons && filteredSeasons?.length === 0 && (
-         <p className="text-center text-muted-foreground py-10">Nenhuma temporada encontrada para "{searchQuery}".</p>
+        <p className="text-center text-muted-foreground py-10">Nenhuma temporada encontrada para "{searchQuery}".</p>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

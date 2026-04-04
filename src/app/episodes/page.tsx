@@ -58,6 +58,10 @@ function EpisodesContent() {
     return episode.title.toLowerCase().includes(searchQuery) ||
            (episode.description && episode.description.toLowerCase().includes(searchQuery)) ||
            showName.includes(searchQuery);
+  }).sort((a, b) => {
+    const dataA = (a as any)["@lastUpdated"] ? new Date((a as any)["@lastUpdated"]).getTime() : 0;
+    const dataB = (b as any)["@lastUpdated"] ? new Date((b as any)["@lastUpdated"]).getTime() : 0;
+    return dataB - dataA;
   });
 
   return (

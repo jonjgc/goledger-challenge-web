@@ -10,6 +10,7 @@ Uma aplicação web moderna, responsiva e robusta para gerenciamento de um catá
 - **Relacionamentos** - Selects em cascata (Ex: ao criar um episódio, você seleciona a série e o sistema filtra as temporadas disponíveis apenas para aquela série).
   - Seleção múltipla via Checkboxes dinâmicos para a montagem de Watchlists.
 - **Feedbacks Visuais usando Toasts:** Alertas em tempo real de sucesso ou erro nas requisições, melhorando a fluidez da navegação (usando Sonner).
+- **Paginação:** Navegação entre páginas, incluindo botões para ir ao início e ao fim da lista.
 - **Tratamento de Datas e Timezones:** Conversão correta de horários de UTC para o fuso local do usuário na edição de episódios, evitando o bug de "timezone".
 - **Sincronização de Cache:** Utilização avançada do React Query para invalidar chaves de cache e atualizar a interface automaticamente após mutações, sem necessidade de refresh manual.
 

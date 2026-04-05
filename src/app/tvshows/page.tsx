@@ -52,8 +52,8 @@ function TvShowsContent() {
     }
   };
 
-  const filteredShows = tvShows?.filter(show => 
-    show.title.toLowerCase().includes(searchQuery) || 
+  const filteredShows = tvShows?.filter(show =>
+    show.title.toLowerCase().includes(searchQuery) ||
     (show.description && show.description.toLowerCase().includes(searchQuery))
   ).sort((a, b) => {
     const dataA = (a as any)["@lastUpdated"] ? new Date((a as any)["@lastUpdated"]).getTime() : 0;
@@ -81,9 +81,9 @@ function TvShowsContent() {
       </div>
 
       {isLoading && <p className="text-muted-foreground animate-pulse text-center py-10">Carregando séries...</p>}
-      
+
       {!isLoading && filteredShows?.length === 0 && (
-         <p className="text-center text-muted-foreground py-10">Nenhuma série encontrada para "{searchQuery}".</p>
+        <p className="text-center text-muted-foreground py-10">Nenhuma série encontrada para "{searchQuery}".</p>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -92,7 +92,7 @@ function TvShowsContent() {
             <CardHeader>
               <CardTitle className="line-clamp-1" title={tvShow.title}>{tvShow.title}</CardTitle>
               <CardDescription className="text-yellow-600 dark:text-yellow-500 font-medium">
-                Idade Recomendada: {tvShow.recommendedAge}+
+                Classificação: {tvShow.recommendedAge === "L" ? "Livre" : `${tvShow.recommendedAge} anos`}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1">
@@ -112,16 +112,16 @@ function TvShowsContent() {
         ))}
       </div>
 
-      <PaginationControls 
-        currentPage={currentPage} 
-        totalPages={totalPages} 
-        onPageChange={setCurrentPage} 
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
       />
 
-      <TvShowDialog 
-        open={isDialogOpen} 
-        onOpenChange={setIsDialogOpen} 
-        tvShowToEdit={tvShowToEdit} 
+      <TvShowDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        tvShowToEdit={tvShowToEdit}
       />
     </div>
   );

@@ -5,7 +5,7 @@ export interface TvShow {
   "@assetType": "tvShows";
   title: string;
   description: string;
-  recommendedAge: number;
+  recommendedAge: number | string;
 }
 
 export async function getTvShows(): Promise<TvShow[]> {

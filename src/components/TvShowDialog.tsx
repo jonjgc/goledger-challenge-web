@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -15,10 +16,8 @@ import { toast } from "sonner";
 
 const formSchema = z.object({
   title: z.string().min(1, "O título é obrigatório"),
-  description: z.string().min(10, "A descrição deve ter pelo menos 10 caracteres"),
-  recommendedAge: z.any().transform((val) => Number(val)).refine((val) => val >= 0, {
-    message: "A idade não pode ser negativa",
-  }),
+  description: z.string().optional(),
+  recommendedAge: z.enum(["L", "10", "12", "14", "16", "18"]),
 });
 
 type FormValues = z.input<typeof formSchema>;
@@ -36,9 +35,9 @@ export function TvShowDialog({ open, onOpenChange, tvShowToEdit }: TvShowDialogP
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: tvShowToEdit?.title || "",
-      description: tvShowToEdit?.description || "",
-      recommendedAge: tvShowToEdit?.recommendedAge || 0,
+      title: "",
+      description: "",
+      recommendedAge: "L",
     },
   });
 
@@ -47,7 +46,17 @@ export function TvShowDialog({ open, onOpenChange, tvShowToEdit }: TvShowDialogP
       form.reset({
         title: tvShowToEdit?.title || "",
         description: tvShowToEdit?.description || "",
-        recommendedAge: tvShowToEdit?.recommendedAge || 0,
+        recommendedAge: (tvShowToEdit?.recommendedAge?.toString() || "L") as any,
+      });
+    }
+  }, [tvShowToEdit, open, form]);
+
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        title: tvShowToEdit?.title || "",
+        description: tvShowToEdit?.description || "",
+        recommendedAge: (tvShowToEdit?.recommendedAge?.toString() || "L") as any,
       });
     }
   }, [tvShowToEdit, open, form]);
@@ -110,8 +119,22 @@ export function TvShowDialog({ open, onOpenChange, tvShowToEdit }: TvShowDialogP
               name="recommendedAge"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Idade Recomendada</FormLabel>
-                  <FormControl><Input type="number" {...field} /></FormControl>
+                  <FormLabel>Classificação Indicativa</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a classificação" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="L">L (Livre)</SelectItem>
+                      <SelectItem value="10">10 anos</SelectItem>
+                      <SelectItem value="12">12 anos</SelectItem>
+                      <SelectItem value="14">14 anos</SelectItem>
+                      <SelectItem value="16">16 anos</SelectItem>
+                      <SelectItem value="18">18 anos</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
